@@ -77,7 +77,7 @@ export default function Dashboard() {
     <div className="dashboard">
       <header className="db-topbar">
         <div className="db-brand">
-          <img src="/tinymd-logo.png" alt="" className="brand-mark" />
+          <img src="/tinymd-logo-white.png" alt="" className="brand-mark" />
           <div className="brand-text">
             <div className="brand-title">TinyMD</div>
           </div>
