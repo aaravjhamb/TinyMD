@@ -221,8 +221,8 @@ const EditorPane = forwardRef<EditorHandle, Props>(function EditorPane(
   function pickActive() {
     const it = flatList[activeIndex];
     if (!it) return false;
-    closeSlash();
     runAction(it.action);
+    closeSlash();
     return true;
   }
 
