@@ -31,10 +31,10 @@ export const SLASH_COMMANDS: SlashGroup[] = [
   {
     group: 'Inline',
     items: [
-      { id: 'bold',   label: 'Bold',          desc: '**bold text**',  icon: 'B',  color: 'orange', keywords: 'bold strong',          action: { type: 'wrap', before: '**', after: '**', placeholder: 'bold text' } },
-      { id: 'italic', label: 'Italic',        desc: '*italic text*',  icon: 'I',  color: 'orange', keywords: 'italic emphasis',      action: { type: 'wrap', before: '*',  after: '*',  placeholder: 'italic text' } },
-      { id: 'strike', label: 'Strikethrough', desc: '~~struck~~',     icon: 'S',  color: 'orange', keywords: 'strike strikethrough', action: { type: 'wrap', before: '~~', after: '~~', placeholder: 'struck' } },
-      { id: 'code',   label: 'Inline code',   desc: '`code`',         icon: '<>', color: 'orange', keywords: 'code inline',          action: { type: 'wrap', before: '`',  after: '`',  placeholder: 'code' } },
+      { id: 'bold',   label: 'Bold',          desc: '**bold text**',  icon: 'B',  color: 'orange', keywords: 'bold strong',          action: { type: 'wrap', before: '**', after: '**' } },
+      { id: 'italic', label: 'Italic',        desc: '*italic text*',  icon: 'I',  color: 'orange', keywords: 'italic emphasis',      action: { type: 'wrap', before: '*',  after: '*'  } },
+      { id: 'strike', label: 'Strikethrough', desc: '~~struck~~',     icon: 'S',  color: 'orange', keywords: 'strike strikethrough', action: { type: 'wrap', before: '~~', after: '~~' } },
+      { id: 'code',   label: 'Inline code',   desc: '`code`',         icon: '<>', color: 'orange', keywords: 'code inline',          action: { type: 'wrap', before: '`',  after: '`'  } },
       { id: 'link',   label: 'Link',          desc: '[text](url)',    icon: '🔗', color: 'blue',   keywords: 'link href url',        action: { type: 'link' } },
     ],
   },
