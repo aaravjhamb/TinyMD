@@ -131,7 +131,7 @@ a { color: var(--accent); }
   padding: 6px 8px 12px;
   border-bottom: 1px solid var(--border);
 }
-.brand-mark { width: 28px; height: 28px; border-radius: 7px; }
+.brand-mark { height: 22px; width: auto; display: block; mix-blend-mode: screen; }
 .brand-text { line-height: 1.1; }
 .brand-title { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
 .brand-sub {
@@ -1160,11 +1160,10 @@ a { color: var(--accent); }
   margin-bottom: 48px;
 }
 .login-brand-row img {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.10);
-  padding: 2px;
+  height: 32px;
+  width: auto;
+  display: block;
+  mix-blend-mode: screen;
 }
 
 .login-pitch {
