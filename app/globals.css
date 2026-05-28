@@ -433,7 +433,7 @@ a { color: var(--accent); }
   resize: none;
   border: 0;
   outline: none;
-  padding: 28px 36px 80px;
+  padding: 28px 36px 50vh;
   font-family: var(--font-mono);
   font-size: 14.5px;
   line-height: 1.7;
