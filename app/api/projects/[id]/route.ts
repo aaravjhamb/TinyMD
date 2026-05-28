@@ -12,7 +12,7 @@ export async function GET(_req: NextRequest, ctx: Params) {
   const { id } = await ctx.params;
 
   const project = await one(
-    `SELECT id, name, color, cover_image, created_at, updated_at
+    `SELECT id, name, color, cover_image, is_public, created_at, updated_at
        FROM projects WHERE id = $1 AND user_id = $2`,
     [id, user.id]
   );
@@ -40,6 +40,7 @@ export async function PATCH(req: NextRequest, ctx: Params) {
   if (typeof body.name === 'string') { fields.push(`name = $${i++}`); values.push(body.name.trim() || 'Untitled'); }
   if (typeof body.color === 'string') { fields.push(`color = $${i++}`); values.push(body.color); }
   if (typeof body.cover_image === 'string' || body.cover_image === null) { fields.push(`cover_image = $${i++}`); values.push(body.cover_image); }
+  if (typeof body.is_public === 'boolean') { fields.push(`is_public = $${i++}`); values.push(body.is_public); }
   if (!fields.length) return NextResponse.json({ error: 'No fields' }, { status: 400 });
 
   fields.push(`updated_at = NOW()`);
@@ -48,7 +49,7 @@ export async function PATCH(req: NextRequest, ctx: Params) {
   const project = await one(
     `UPDATE projects SET ${fields.join(', ')}
       WHERE id = $${i++} AND user_id = $${i}
-    RETURNING id, name, color, cover_image, created_at, updated_at`,
+    RETURNING id, name, color, cover_image, is_public, created_at, updated_at`,
     values
   );
   if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 });

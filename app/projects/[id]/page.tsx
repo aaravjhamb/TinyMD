@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import EditorPane, { type EditorHandle } from '../../components/EditorPane';
 import Preview from '../../components/Preview';
 import SettingsModal from '../../components/SettingsModal';
+import ShareModal from '../../components/ShareModal';
 import UserMenu from '../../components/UserMenu';
 import {
   createEntry as apiCreateEntry,
@@ -12,6 +13,7 @@ import {
   deleteProject as apiDeleteProject,
   getMe,
   getProject,
+  isGuestMode,
   saveCdnKey,
   updateEntry as apiUpdateEntry,
   updateProject as apiUpdateProject,
@@ -31,6 +33,8 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [previewVisible, setPreviewVisible] = useState(true);
   const [apiKey, setApiKeyState] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [guest, setGuest] = useState(false);
   const [toast, setToast] = useState<ToastInfo>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [counts, setCounts] = useState({ words: 0, chars: 0, line: 1, col: 1 });
@@ -43,6 +47,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     (async () => {
       try {
+        setGuest(isGuestMode());
         const me = await getMe();
         if (!me.user) { router.replace(`/login`); return; }
         setUser(me.user);
@@ -366,6 +371,19 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
                 </button>
               </>
             )}
+            {!guest && (
+              <button
+                className={'ghost-btn' + (project.is_public ? ' is-public' : '')}
+                onClick={() => setShareOpen(true)}
+                title={project.is_public ? 'Public — manage sharing' : 'Share publicly'}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+                {project.is_public ? 'Public' : 'Share'}
+              </button>
+            )}
             {user && <UserMenu user={user} />}
           </div>
         </header>
@@ -411,6 +429,23 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         initialKey={apiKey}
         onClose={() => setSettingsOpen(false)}
         onSave={async (k) => { await saveCdnKey(k); setApiKeyState(k); }}
+        onToast={showToast}
+      />
+
+      <ShareModal
+        open={shareOpen}
+        projectId={project.id}
+        isPublic={project.is_public}
+        onClose={() => setShareOpen(false)}
+        onToggle={async (next) => {
+          try {
+            const { project: updated } = await apiUpdateProject(project.id, { is_public: next });
+            setProject({ ...project, is_public: updated.is_public });
+            showToast(next ? 'Project is now public' : 'Project is now private', 'success');
+          } catch (e: any) {
+            showToast(e.message || 'Failed to update sharing', 'error');
+          }
+        }}
         onToast={showToast}
       />
 

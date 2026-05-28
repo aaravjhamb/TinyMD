@@ -16,13 +16,14 @@ export async function GET() {
     name: string;
     color: string;
     cover_image: string | null;
+    is_public: boolean;
     created_at: Date;
     updated_at: Date;
     entry_count: string;
     last_entry_at: Date | null;
     last_entry_title: string | null;
   }>(
-    `SELECT p.id, p.name, p.color, p.cover_image, p.created_at, p.updated_at,
+    `SELECT p.id, p.name, p.color, p.cover_image, p.is_public, p.created_at, p.updated_at,
             COUNT(e.id)::int AS entry_count,
             MAX(e.updated_at) AS last_entry_at,
             (SELECT title FROM entries e2
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
   const project = await one(
     `INSERT INTO projects (id, user_id, name, color, cover_image)
        VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, name, color, cover_image, created_at, updated_at`,
+     RETURNING id, name, color, cover_image, is_public, created_at, updated_at`,
     [id, user.id, name, color, cover]
   );
 

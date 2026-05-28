@@ -40,7 +40,7 @@ export async function getProject(id: string): Promise<{ project: Project; entrie
   return req(`/api/projects/${id}`);
 }
 
-export async function updateProject(id: string, body: Partial<{ name: string; color: string; cover_image: string | null }>): Promise<{ project: Project }> {
+export async function updateProject(id: string, body: Partial<{ name: string; color: string; cover_image: string | null; is_public: boolean }>): Promise<{ project: Project }> {
   return req(`/api/projects/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
 }
 

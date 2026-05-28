@@ -32,9 +32,12 @@ function load(): GuestData {
   if (!raw) return { ...EMPTY };
   try {
     const parsed = JSON.parse(raw);
+    const projects: Project[] = Array.isArray(parsed.projects)
+      ? parsed.projects.map((p: Project) => ({ ...p, is_public: !!p.is_public }))
+      : [];
     return {
       cdn_api_key: parsed.cdn_api_key ?? null,
-      projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+      projects,
       entries: parsed.entries && typeof parsed.entries === 'object' ? parsed.entries : {},
     };
   } catch {
@@ -111,6 +114,7 @@ export async function createProject(body: {
     name: body.name,
     color: body.color || 'red',
     cover_image: body.cover_image ?? null,
+    is_public: false,
     created_at: now,
     updated_at: now,
   };
@@ -132,7 +136,7 @@ export async function getProject(id: string): Promise<{ project: Project; entrie
 
 export async function updateProject(
   id: string,
-  body: Partial<{ name: string; color: string; cover_image: string | null }>
+  body: Partial<{ name: string; color: string; cover_image: string | null; is_public: boolean }>
 ): Promise<{ project: Project }> {
   const data = load();
   const idx = data.projects.findIndex((p) => p.id === id);

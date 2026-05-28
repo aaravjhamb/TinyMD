@@ -27,7 +27,7 @@ export function getProject(id: string): Promise<{ project: Project; entries: Ent
 
 export function updateProject(
   id: string,
-  body: Partial<{ name: string; color: string; cover_image: string | null }>
+  body: Partial<{ name: string; color: string; cover_image: string | null; is_public: boolean }>
 ): Promise<{ project: Project }> {
   return guest.isGuestMode() ? guest.updateProject(id, body) : api.updateProject(id, body);
 }

@@ -1811,3 +1811,150 @@ a { color: var(--accent); }
   .login-btn:hover { transform: none !important; }
 }
 
+
+/* Public project page ------------------------------------------------ */
+.public-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 64px 24px 120px;
+  position: relative;
+  z-index: 1;
+}
+.public-back {
+  display: inline-block;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-bottom: 28px;
+  transition: color 160ms var(--ease-out);
+}
+.public-back:hover { color: var(--accent-bright); }
+.public-title-wrap { margin-bottom: 36px; }
+.public-title {
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 0;
+  line-height: 1.1;
+  background: linear-gradient(135deg, var(--card-accent, var(--accent-bright)) 0%, var(--accent-deep) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.public-title.accent-red    { --card-accent: var(--hc-red); }
+.public-title.accent-orange { --card-accent: var(--hc-orange); }
+.public-title.accent-yellow { --card-accent: var(--hc-yellow); }
+.public-title.accent-green  { --card-accent: var(--hc-green); }
+.public-title.accent-cyan   { --card-accent: var(--hc-cyan); }
+.public-title.accent-blue   { --card-accent: var(--hc-blue); }
+.public-title.accent-purple { --card-accent: var(--hc-purple); }
+.public-meta {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+.public-cover {
+  margin: 24px 0 0;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+.public-cover img { width: 100%; display: block; }
+
+.public-entries { display: flex; flex-direction: column; gap: 56px; }
+.public-entry {
+  padding-top: 36px;
+  border-top: 1px solid var(--border);
+}
+.public-entries .public-entry:first-child { border-top: 0; padding-top: 0; }
+.public-entry-head { margin-bottom: 20px; }
+.public-entry-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0;
+  color: var(--text);
+}
+.public-entry-date {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+.public-entry-body .preview-pane {
+  background: transparent;
+  padding: 0;
+  overflow: visible;
+}
+.public-empty {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 60px 0;
+}
+.public-footer {
+  margin-top: 80px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.public-footer a { color: var(--text-soft); text-decoration: underline; text-decoration-color: var(--border-strong); }
+.public-footer a:hover { color: var(--accent-bright); }
+
+/* Share modal --------------------------------------------------------- */
+.ghost-btn.is-public { border-color: var(--accent); color: var(--accent-bright); }
+.share-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+.share-toggle-text { flex: 1; min-width: 0; }
+.share-toggle-title { font-weight: 600; font-size: 14px; color: var(--text); margin-bottom: 4px; }
+.share-toggle-sub { font-size: 12.5px; color: var(--text-soft); line-height: 1.5; }
+.share-switch {
+  flex-shrink: 0;
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--surface-3);
+  position: relative;
+  cursor: pointer;
+  padding: 0;
+  transition: background 200ms var(--ease-out);
+}
+.share-switch:disabled { opacity: 0.6; cursor: not-allowed; }
+.share-switch.on { background: var(--accent); }
+.share-switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: transform 200ms var(--ease-out);
+}
+.share-switch.on .share-switch-thumb { transform: translateX(16px); }
+.share-link-row { display: flex; gap: 8px; align-items: stretch; }
+.share-link-row input {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+.share-link-row .ghost-btn { flex-shrink: 0; }
