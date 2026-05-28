@@ -4,7 +4,7 @@ import 'highlight.js/styles/atom-one-dark.css';
 
 export const metadata: Metadata = {
   title: 'TinyMD',
-  description: 'Journal hardware projects in markdown with a live preview.',
+  description: "The journaling software you didn't know you needed :D",
   icons: { icon: '/tinymd-logo-black.png' },
 };
 
