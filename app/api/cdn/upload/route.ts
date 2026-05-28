@@ -16,12 +16,13 @@ export async function POST(req: NextRequest) {
   }
 
   const file = incoming.get('file');
-  if (!(file instanceof File)) {
+  if (!file || typeof file === 'string') {
     return NextResponse.json({ error: 'Missing file' }, { status: 400 });
   }
 
   const outgoing = new FormData();
-  outgoing.append('file', file, file.name);
+  const name = (file as { name?: string }).name || 'upload';
+  outgoing.append('file', file, name);
 
   const upstream = await fetch('https://cdn.hackclub.com/api/v4/upload', {
     method: 'POST',
