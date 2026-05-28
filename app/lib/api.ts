@@ -2,6 +2,7 @@ import type { Entry, Project, ProjectWithCounts, User } from './types';
 
 async function req<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
+    credentials: 'include',
     ...init,
     headers: {
       'Content-Type': 'application/json',
