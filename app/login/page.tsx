@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getMe } from '../lib/api';
+import { enableGuestMode, getMe } from '../lib/store';
 
 function LoginInner() {
   const sp = useSearchParams();
@@ -76,6 +76,19 @@ function LoginInner() {
               </svg>
               Continue with Hack Club
             </a>
+
+            <div className="login-divider"><span>or</span></div>
+
+            <button
+              type="button"
+              className="login-guest"
+              onClick={() => { enableGuestMode(); router.replace('/'); }}
+            >
+              Continue as guest
+            </button>
+            <p className="login-guest-note">
+              Everything stays in this browser. No account, no sync.
+            </p>
 
             {error && (
               <div className="login-error">

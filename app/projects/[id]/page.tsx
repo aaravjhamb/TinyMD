@@ -15,7 +15,7 @@ import {
   saveCdnKey,
   updateEntry as apiUpdateEntry,
   updateProject as apiUpdateProject,
-} from '../../lib/api';
+} from '../../lib/store';
 import type { Entry, Project, ToastInfo, User } from '../../lib/types';
 import { relTime } from '../../lib/utils';
 

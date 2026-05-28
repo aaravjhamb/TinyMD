@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import UserMenu from './components/UserMenu';
 import NewProjectModal from './components/NewProjectModal';
 import SettingsModal from './components/SettingsModal';
-import { createProject, getMe, listProjects, saveCdnKey } from './lib/api';
+import { createProject, getMe, listProjects, saveCdnKey } from './lib/store';
 import type { ProjectWithCounts, User, ToastInfo } from './lib/types';
 import { relTime } from './lib/utils';
 

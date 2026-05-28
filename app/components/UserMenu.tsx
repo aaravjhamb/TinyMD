@@ -1,13 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { disableGuestMode, isGuestMode } from '../lib/store';
 import type { User } from '../lib/types';
 
 export default function UserMenu({ user }: { user: User }) {
   const [open, setOpen] = useState(false);
+  const [guest, setGuest] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setGuest(isGuestMode());
     const onDoc = (e: MouseEvent) => {
       if (!wrap.current?.contains(e.target as Node)) setOpen(false);
     };
@@ -27,11 +30,27 @@ export default function UserMenu({ user }: { user: User }) {
         <div className="user-popover" role="menu">
           <div className="user-popover-head">
             <div className="user-popover-name">{displayName}</div>
-            {user.email && <div className="user-popover-email">{user.email}</div>}
+            {guest
+              ? <div className="user-popover-email">Guest · data stays in this browser</div>
+              : user.email && <div className="user-popover-email">{user.email}</div>}
           </div>
-          <form action="/api/auth/logout" method="post">
-            <button type="submit" className="user-popover-action">Sign out</button>
-          </form>
+          {guest ? (
+            <button
+              type="button"
+              className="user-popover-action"
+              onClick={() => {
+                if (!confirm('Leaving guest mode will delete your local projects and entries. Continue?')) return;
+                disableGuestMode();
+                window.location.href = '/login';
+              }}
+            >
+              Exit guest mode
+            </button>
+          ) : (
+            <form action="/api/auth/logout" method="post">
+              <button type="submit" className="user-popover-action">Sign out</button>
+            </form>
+          )}
         </div>
       )}
     </div>
