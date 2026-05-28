@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      HACKCLUB_CLIENT_ID: ${HACKCLUB_CLIENT_ID}
+      HACKCLUB_CLIENT_SECRET: ${HACKCLUB_CLIENT_SECRET}
+      HACKCLUB_REDIRECT_URI: ${HACKCLUB_REDIRECT_URI}
+      SESSION_SECRET: ${SESSION_SECRET}
+    expose:
+      - "3000"
