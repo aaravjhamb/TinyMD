@@ -77,10 +77,9 @@ export default function Dashboard() {
     <div className="dashboard">
       <header className="db-topbar">
         <div className="db-brand">
-          <img src="https://assets.hackclub.com/icon-rounded.svg" alt="" className="brand-mark" />
+          <img src="/tinymd-logo.png" alt="" className="brand-mark" />
           <div className="brand-text">
             <div className="brand-title">TinyMD</div>
-            <div className="brand-sub">hardware journal</div>
           </div>
         </div>
         <div className="db-topbar-actions">
@@ -98,9 +97,9 @@ export default function Dashboard() {
       <main className="db-main">
         <div className="db-hero">
           <h1 className="db-title">
-            {user?.first_name ? `Hey, ${user.first_name}.` : 'Welcome back.'}
+            {user?.first_name ? `Hey, ${user.first_name}!` : 'Welcome back.'}
           </h1>
-          <p className="db-subtitle">Your builds, all in one place.</p>
+          <p className="db-subtitle">watcha gonna cook today</p>
         </div>
 
         {projects.length === 0 ? (

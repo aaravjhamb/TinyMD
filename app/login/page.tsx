@@ -24,7 +24,7 @@ function LoginInner() {
       <div className="login-card">
         <div className="login-panel-left">
           <div className="login-brand-row">
-            <img src="https://assets.hackclub.com/icon-rounded.svg" alt="" />
+            <img src="/tinymd-logo.png" alt="" />
             <span>TinyMD</span>
           </div>
 

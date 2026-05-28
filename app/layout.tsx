@@ -5,7 +5,7 @@ import 'highlight.js/styles/atom-one-dark.css';
 export const metadata: Metadata = {
   title: 'TinyMD',
   description: 'Journal hardware projects in markdown with a live preview.',
-  icons: { icon: 'https://assets.hackclub.com/icon-rounded.svg' },
+  icons: { icon: '/tinymd-logo.png' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
