@@ -11,6 +11,18 @@ export const HC_AUTHORIZE = process.env.HACKCLUB_AUTHORIZE_URL || 'https://auth.
 export const HC_TOKEN     = process.env.HACKCLUB_TOKEN_URL     || 'https://auth.hackclub.com/oauth/token';
 export const HC_USERINFO  = process.env.HACKCLUB_USERINFO_URL  || 'https://auth.hackclub.com/api/v1/me';
 
+// Behind a reverse proxy (Dokploy/Traefik) the standalone Next server sees
+// the internal request, so `new URL(req.url).origin` resolves to
+// http://localhost:3000. Prefer the public origin derived from the configured
+// redirect URI; fall back to the request URL only in local dev.
+export function publicOrigin(reqUrl: string): string {
+  const configured = process.env.APP_URL || process.env.HACKCLUB_REDIRECT_URI;
+  if (configured) {
+    try { return new URL(configured).origin; } catch {}
+  }
+  return new URL(reqUrl).origin;
+}
+
 export type SessionUser = {
   id: string;
   email: string | null;
