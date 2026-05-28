@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
   await clearOAuthState();
 
-  const redirectUri = process.env.HACKCLUB_REDIRECT_URI || `${origin}/api/auth/callback`;
+  const redirectUri = `${origin}/api/auth/callback`;
 
   try {
     const token = await exchangeCode({
