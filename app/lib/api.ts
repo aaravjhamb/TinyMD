@@ -58,3 +58,7 @@ export async function updateEntry(id: string, body: Partial<{ title: string; bod
 export async function deleteEntry(id: string): Promise<{ ok: true }> {
   return req(`/api/entries/${id}`, { method: 'DELETE' });
 }
+
+export async function saveCdnKey(key: string): Promise<{ cdn_api_key: string | null }> {
+  return req('/api/me/cdn-key', { method: 'PUT', body: JSON.stringify({ key }) });
+}

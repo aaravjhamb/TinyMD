@@ -4,6 +4,7 @@ export type User = {
   first_name: string | null;
   last_name: string | null;
   slack_id: string | null;
+  cdn_api_key: string | null;
 };
 
 export type Project = {

@@ -12,10 +12,10 @@ import {
   deleteProject as apiDeleteProject,
   getMe,
   getProject,
+  saveCdnKey,
   updateEntry as apiUpdateEntry,
   updateProject as apiUpdateProject,
 } from '../../lib/api';
-import { loadApiKey, saveApiKey } from '../../lib/storage';
 import type { Entry, Project, ToastInfo, User } from '../../lib/types';
 import { relTime } from '../../lib/utils';
 
@@ -50,7 +50,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         setProject(data.project);
         setEntries(data.entries);
         setActiveEntryId(data.entries[0]?.id || null);
-        setApiKeyState(loadApiKey());
+        setApiKeyState(me.user.cdn_api_key || '');
       } catch (e: any) {
         if (e.status === 401) { router.replace(`/login?return_to=/projects/${projectId}`); return; }
         if (e.status === 404) { router.replace('/'); return; }
@@ -410,7 +410,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         open={settingsOpen}
         initialKey={apiKey}
         onClose={() => setSettingsOpen(false)}
-        onSave={(k) => { saveApiKey(k); setApiKeyState(k); }}
+        onSave={async (k) => { await saveCdnKey(k); setApiKeyState(k); }}
         onToast={showToast}
       />
 

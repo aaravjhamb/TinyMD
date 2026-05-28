@@ -8,13 +8,14 @@ type Props = {
   open: boolean;
   initialKey: string;
   onClose: () => void;
-  onSave: (key: string) => void;
+  onSave: (key: string) => Promise<void> | void;
   onToast: (msg: string, type?: 'success' | 'error') => void;
 };
 
 export default function SettingsModal({ open, initialKey, onClose, onSave, onToast }: Props) {
   const [keyInput, setKeyInput] = useState(initialKey);
   const [me, setMe] = useState<CdnMe | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -62,7 +63,7 @@ export default function SettingsModal({ open, initialKey, onClose, onSave, onToa
               onChange={(e) => setKeyInput(e.target.value)}
             />
             <small>
-              Stored locally in your browser. Create one at{' '}
+              Saved to your account. Create one at{' '}
               <a href="https://cdn.hackclub.com/" target="_blank" rel="noopener noreferrer">
                 cdn.hackclub.com
               </a>.
@@ -82,12 +83,24 @@ export default function SettingsModal({ open, initialKey, onClose, onSave, onToa
           )}
 
           <div className="modal-actions">
-            <button className="ghost-btn" onClick={test}>Test key</button>
+            <button className="ghost-btn" onClick={test} disabled={saving}>Test key</button>
             <button
               className="primary-btn"
-              onClick={() => { onSave(keyInput.trim()); onToast('Settings saved', 'success'); onClose(); }}
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  await onSave(keyInput.trim());
+                  onToast('Settings saved', 'success');
+                  onClose();
+                } catch (e: any) {
+                  onToast(e.message || 'Failed to save', 'error');
+                } finally {
+                  setSaving(false);
+                }
+              }}
             >
-              Save
+              {saving ? 'Saving…' : 'Save'}
             </button>
           </div>
         </div>
