@@ -1,0 +1,2 @@
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS cover_image TEXT;
+ALTER TABLE projects DROP COLUMN IF EXISTS emoji;
