@@ -131,7 +131,7 @@ a { color: var(--accent); }
   padding: 6px 8px 12px;
   border-bottom: 1px solid var(--border);
 }
-.brand-mark { height: 22px; width: auto; display: block; mix-blend-mode: screen; }
+.brand-mark { height: 34px; width: auto; display: block; mix-blend-mode: screen; }
 .brand-text { line-height: 1.1; }
 .brand-title { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
 .brand-sub {
@@ -1156,7 +1156,7 @@ a { color: var(--accent); }
   margin-bottom: 48px;
 }
 .login-brand-row img {
-  height: 32px;
+  height: 52px;
   width: auto;
   display: block;
   mix-blend-mode: screen;
