@@ -172,7 +172,7 @@ export default function NewProjectModal({ open, apiKey, onClose, onCreate, onNee
           <div className="modal-actions">
             <button className="ghost-btn" onClick={onClose}>Cancel</button>
             <button className="primary-btn" onClick={submit} disabled={!name.trim() || uploading}>
-              Create project
+              Add a project
             </button>
           </div>
         </div>

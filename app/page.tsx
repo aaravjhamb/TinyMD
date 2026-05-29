@@ -175,7 +175,7 @@ function EmptyState({ onNew }: { onNew: () => void }) {
       </div>
       <h2>No projects yet</h2>
       <p>Start your first build journal. You can add daily entries, photos, BOMs, pinouts and more.</p>
-      <button className="primary-btn" onClick={onNew}>Create your first project</button>
+      <button className="primary-btn" onClick={onNew}>Add your first project</button>
     </div>
   );
 }
