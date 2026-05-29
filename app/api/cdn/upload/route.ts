@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
+const CDN_BASE_URL = process.env.CDN_BASE_URL || 'https://cdn.aaravj.tech';
+
 export async function POST(req: NextRequest) {
   const auth = req.headers.get('authorization');
   if (!auth) {
@@ -24,7 +26,7 @@ export async function POST(req: NextRequest) {
   const name = (file as { name?: string }).name || 'upload';
   outgoing.append('file', file, name);
 
-  const upstream = await fetch('https://cdn.hackclub.com/api/v4/upload', {
+  const upstream = await fetch(`${CDN_BASE_URL}/api/upload`, {
     method: 'POST',
     headers: { Authorization: auth },
     body: outgoing,

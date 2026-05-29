@@ -42,7 +42,7 @@ export default function NewProjectModal({ open, apiKey, onClose, onCreate, onNee
 
   async function handleFile(file: File) {
     if (!apiKey) {
-      setUploadErr('Add a Hack Club CDN key in Settings first.');
+      setUploadErr('Add a CDN key in Settings first.');
       onNeedApiKey?.();
       return;
     }
@@ -138,7 +138,7 @@ export default function NewProjectModal({ open, apiKey, onClose, onCreate, onNee
                     <path d="m21 15-5-5L5 21"/>
                   </svg>
                   <div>Drop image, or click to upload</div>
-                  <small>Stored on cdn.hackclub.com</small>
+                  <small>Stored on the cdn</small>
                 </div>
               )}
               <input

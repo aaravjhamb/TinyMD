@@ -238,7 +238,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             title="Change cover image"
             onClick={() => {
               if (!apiKey) {
-                showToast('Add a Hack Club CDN key in Settings first', 'error');
+                showToast('Add a CDN key in Settings first', 'error');
                 setSettingsOpen(true);
                 return;
               }
@@ -353,7 +353,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
                   className="ghost-btn"
                   onClick={() => {
                     if (!apiKey) {
-                      showToast('Add a Hack Club CDN key in Settings first', 'error');
+                      showToast('Add a CDN key in Settings first', 'error');
                       setSettingsOpen(true);
                       return;
                     }

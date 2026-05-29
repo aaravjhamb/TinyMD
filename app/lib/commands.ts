@@ -53,7 +53,7 @@ export const SLASH_COMMANDS: SlashGroup[] = [
   {
     group: 'Hardware',
     items: [
-      { id: 'image',     label: 'Image upload',  desc: 'Upload to Hack Club CDN', icon: '🖼', color: 'red',    keywords: 'image picture photo upload cdn', action: { type: 'image' } },
+      { id: 'image',     label: 'Image upload',  desc: 'Upload to the cdn', icon: '🖼', color: 'red',    keywords: 'image picture photo upload cdn', action: { type: 'image' } },
       { id: 'component', label: 'Component',     desc: 'Part / spec card',        icon: '⚙', color: 'blue',   keywords: 'component part bom spec',        action: { type: 'insert', text: '\n:::component\nName: \nValue: \nPackage: \nDatasheet: \n:::\n', cursorOffset: 18 } },
       { id: 'bom',       label: 'BOM table',     desc: 'Bill of materials',       icon: '📋', color: 'blue',   keywords: 'bom parts list table',           action: { type: 'insert', text: '\n| Qty | Part | Value | Footprint | Notes |\n| --- | --- | --- | --- | --- |\n| 1 |  |  |  |  |\n\n' } },
       { id: 'pinout',    label: 'Pinout table',  desc: 'Pin assignments',         icon: '⏚', color: 'green',  keywords: 'pinout pins wiring',             action: { type: 'insert', text: '\n| Pin | Net | Notes |\n| --- | --- | --- |\n|  |  |  |\n\n' } },
