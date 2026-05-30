@@ -829,7 +829,7 @@ a { color: var(--accent); }
     z-index: 50;
   }
   .split { grid-template-columns: 1fr 0 0; }
-  .preview-pane, .divider { display: none; }
+  .split .preview-pane, .split .divider { display: none; }
   .project-grid { grid-template-columns: 1fr !important; }
 }
 
