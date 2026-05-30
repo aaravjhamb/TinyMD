@@ -519,6 +519,7 @@ a { color: var(--accent); }
   font-size: 15px;
   line-height: 1.65;
   color: var(--text);
+  overflow-wrap: break-word;
 }
 .preview h1, .preview h2, .preview h3, .preview h4 {
   font-weight: 700;
@@ -1905,6 +1906,26 @@ a { color: var(--accent); }
 }
 .public-footer a { color: var(--text-soft); text-decoration: underline; text-decoration-color: var(--border-strong); }
 .public-footer a:hover { color: var(--accent-bright); }
+
+/* Public journal — mobile -------------------------------------------- */
+@media (max-width: 640px) {
+  .public-page { padding: 36px 18px 80px; }
+  .public-back { margin-bottom: 20px; }
+  .public-title-wrap { margin-bottom: 26px; }
+  .public-title { font-size: 27px; }
+  .public-cover {
+    margin-top: 18px;
+    border-radius: 12px;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.32);
+  }
+  .public-entries { gap: 40px; }
+  .public-entry { padding-top: 28px; }
+  .public-entry-head { margin-bottom: 14px; }
+  .public-entry-title { font-size: 20px; }
+  .public-footer { margin-top: 56px; }
+  /* Wide markdown tables scroll instead of overflowing the page */
+  .public-entry-body .preview table { display: block; overflow-x: auto; }
+}
 
 /* Share modal --------------------------------------------------------- */
 .ghost-btn.is-public { border-color: var(--accent); color: var(--accent-bright); }
