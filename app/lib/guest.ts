@@ -1,4 +1,4 @@
-import type { Entry, Project, ProjectWithCounts, User } from './types';
+import type { Entry, EntryKind, Project, ProjectWithCounts, User } from './types';
 
 const FLAG_KEY = 'tinymd.guest.enabled';
 const DATA_KEY = 'tinymd.guest.v1';
@@ -35,10 +35,17 @@ function load(): GuestData {
     const projects: Project[] = Array.isArray(parsed.projects)
       ? parsed.projects.map((p: Project) => ({ ...p, is_public: !!p.is_public }))
       : [];
+    const entries: Record<string, Entry[]> = {};
+    if (parsed.entries && typeof parsed.entries === 'object') {
+      for (const key of Object.keys(parsed.entries)) {
+        const list = parsed.entries[key];
+        if (Array.isArray(list)) entries[key] = list.map(normalizeEntry);
+      }
+    }
     return {
       cdn_api_key: parsed.cdn_api_key ?? null,
       projects,
-      entries: parsed.entries && typeof parsed.entries === 'object' ? parsed.entries : {},
+      entries,
     };
   } catch {
     return { ...EMPTY };
@@ -58,6 +65,18 @@ function uid(): string {
 
 function nowISO(): string {
   return new Date().toISOString();
+}
+
+function normalizeEntry(e: Entry): Entry {
+  return { ...e, kind: e.kind ?? 'journal', pinned: !!e.pinned };
+}
+
+function sortGuestEntries(list: Entry[]): Entry[] {
+  return [...list].sort(
+    (a, b) =>
+      (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
+      new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+  );
 }
 
 export function isGuestMode(): boolean {
@@ -128,9 +147,7 @@ export async function getProject(id: string): Promise<{ project: Project; entrie
   const data = load();
   const project = data.projects.find((p) => p.id === id);
   if (!project) throw new Error('Project not found');
-  const entries = [...(data.entries[id] || [])].sort(
-    (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
-  );
+  const entries = sortGuestEntries(data.entries[id] || []);
   return { project, entries };
 }
 
@@ -157,19 +174,22 @@ export async function deleteProject(id: string): Promise<{ ok: true }> {
 
 export async function createEntry(
   projectId: string,
-  body: { title?: string; body?: string }
+  body: { title?: string; body?: string; kind?: EntryKind; pinned?: boolean }
 ): Promise<{ entry: Entry }> {
   const data = load();
   if (!data.projects.find((p) => p.id === projectId)) throw new Error('Project not found');
   const now = nowISO();
+  const kind = body.kind ?? 'journal';
   const entry: Entry = {
     id: uid(),
     title: body.title || 'Untitled',
     body: body.body || '',
+    kind,
+    pinned: body.pinned ?? kind === 'readme',
     created_at: now,
     updated_at: now,
   };
-  data.entries[projectId] = [entry, ...(data.entries[projectId] || [])];
+  data.entries[projectId] = sortGuestEntries([entry, ...(data.entries[projectId] || [])]);
   const pIdx = data.projects.findIndex((p) => p.id === projectId);
   if (pIdx !== -1) data.projects[pIdx] = { ...data.projects[pIdx], updated_at: now };
   save(data);

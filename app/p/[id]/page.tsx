@@ -26,14 +26,14 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
   if (!project) notFound();
 
   const entries = await many<RawEntry>(
-    `SELECT id, title, body, created_at, updated_at
+    `SELECT id, title, body, kind, pinned, created_at, updated_at
        FROM entries WHERE project_id = $1
-      ORDER BY created_at ASC`,
+      ORDER BY pinned DESC, created_at ASC`,
     [id]
   );
 
-  const updated = new Date(project.updated_at).toLocaleDateString(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
+  const updated = new Date(project.updated_at).toLocaleDateString('en-GB', {
+    year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC',
   });
 
   return (

@@ -17,6 +17,8 @@ export async function PATCH(req: NextRequest, ctx: Params) {
   let i = 1;
   if (typeof body.title === 'string') { fields.push(`title = $${i++}`); values.push(body.title.trim() || 'Untitled'); }
   if (typeof body.body === 'string')  { fields.push(`body = $${i++}`); values.push(body.body); }
+  if (typeof body.pinned === 'boolean') { fields.push(`pinned = $${i++}`); values.push(body.pinned); }
+  if (body.kind === 'journal' || body.kind === 'readme' || body.kind === 'bom') { fields.push(`kind = $${i++}`); values.push(body.kind); }
   if (!fields.length) return NextResponse.json({ error: 'No fields' }, { status: 400 });
   fields.push(`updated_at = NOW()`);
   values.push(id, user.id);
@@ -24,7 +26,7 @@ export async function PATCH(req: NextRequest, ctx: Params) {
   const entry = await one(
     `UPDATE entries SET ${fields.join(', ')}
       WHERE id = $${i++} AND user_id = $${i}
-    RETURNING id, project_id, title, body, created_at, updated_at`,
+    RETURNING id, project_id, title, body, kind, pinned, created_at, updated_at`,
     values
   );
   if (!entry) return NextResponse.json({ error: 'Not found' }, { status: 404 });

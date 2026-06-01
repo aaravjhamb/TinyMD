@@ -1,4 +1,4 @@
-import type { Entry, Project, ProjectWithCounts, User } from './types';
+import type { Entry, EntryKind, Project, ProjectWithCounts, User } from './types';
 
 async function req<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
@@ -48,11 +48,11 @@ export async function deleteProject(id: string): Promise<{ ok: true }> {
   return req(`/api/projects/${id}`, { method: 'DELETE' });
 }
 
-export async function createEntry(projectId: string, body: { title?: string; body?: string }): Promise<{ entry: Entry }> {
+export async function createEntry(projectId: string, body: { title?: string; body?: string; kind?: EntryKind; pinned?: boolean }): Promise<{ entry: Entry }> {
   return req(`/api/projects/${projectId}/entries`, { method: 'POST', body: JSON.stringify(body) });
 }
 
-export async function updateEntry(id: string, body: Partial<{ title: string; body: string }>): Promise<{ entry: Entry }> {
+export async function updateEntry(id: string, body: Partial<{ title: string; body: string; pinned: boolean; kind: EntryKind }>): Promise<{ entry: Entry }> {
   return req(`/api/entries/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
 }
 

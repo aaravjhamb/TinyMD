@@ -1,6 +1,6 @@
 import * as api from './api';
 import * as guest from './guest';
-import type { Entry, Project, ProjectWithCounts, User } from './types';
+import type { Entry, EntryKind, Project, ProjectWithCounts, User } from './types';
 
 export { isGuestMode, enableGuestMode, disableGuestMode } from './guest';
 export { ApiError } from './api';
@@ -38,14 +38,14 @@ export function deleteProject(id: string): Promise<{ ok: true }> {
 
 export function createEntry(
   projectId: string,
-  body: { title?: string; body?: string }
+  body: { title?: string; body?: string; kind?: EntryKind; pinned?: boolean }
 ): Promise<{ entry: Entry }> {
   return guest.isGuestMode() ? guest.createEntry(projectId, body) : api.createEntry(projectId, body);
 }
 
 export function updateEntry(
   id: string,
-  body: Partial<{ title: string; body: string }>
+  body: Partial<{ title: string; body: string; pinned: boolean; kind: EntryKind }>
 ): Promise<{ entry: Entry }> {
   return guest.isGuestMode() ? guest.updateEntry(id, body) : api.updateEntry(id, body);
 }

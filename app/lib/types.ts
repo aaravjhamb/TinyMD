@@ -23,10 +23,14 @@ export type ProjectWithCounts = Project & {
   last_entry_title: string | null;
 };
 
+export type EntryKind = 'journal' | 'readme' | 'bom';
+
 export type Entry = {
   id: string;
   title: string;
   body: string;
+  kind: EntryKind;
+  pinned: boolean;
   created_at: string;
   updated_at: string;
 };
