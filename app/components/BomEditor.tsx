@@ -4,8 +4,10 @@ import { useMemo, useRef, useState } from 'react';
 
 type Props = {
   entryId: string;
+  title?: string;
   initialBody: string;
   onChange: (body: string) => void;
+  onToast?: (msg: string, type?: 'success' | 'error') => void;
 };
 
 type Row = { id: string; cells: string[] };
@@ -55,6 +57,11 @@ function parseBom(md: string): { columns: string[]; rows: string[][] } {
   return { columns: DEFAULT_COLUMNS.slice(), rows: [DEFAULT_COLUMNS.map(() => '')] };
 }
 
+function parseTotal(md: string): string | null {
+  const m = md.match(/^\s*\*\*Total:\*\*\s*(.+?)\s*$/m);
+  return m ? m[1].trim() : null;
+}
+
 function escapeCell(v: string): string {
   return v.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ').trim();
 }
@@ -98,7 +105,12 @@ function computeTotal(columns: string[], rows: Row[]): string | null {
   return currency ? currency + rounded : String(rounded);
 }
 
-export default function BomEditor({ initialBody, onChange }: Props) {
+function csvEscape(v: string): string {
+  const s = String(v ?? '');
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+export default function BomEditor({ title, initialBody, onChange, onToast }: Props) {
   const idc = useRef(0);
   const newId = () => 'r' + (++idc.current);
 
@@ -106,13 +118,27 @@ export default function BomEditor({ initialBody, onChange }: Props) {
   const [rows, setRows] = useState<Row[]>(() =>
     parseBom(initialBody).rows.map((cells) => ({ id: newId(), cells }))
   );
+  // Manual total override: set when the stored total differs from the auto-computed one.
+  const [override, setOverride] = useState<string | null>(() => {
+    const stored = parseTotal(initialBody);
+    if (stored == null) return null;
+    const parsed = parseBom(initialBody);
+    const auto = computeTotal(parsed.columns, parsed.rows.map((cells) => ({ id: '', cells })));
+    return stored === (auto ?? '') ? null : stored;
+  });
 
-  const total = useMemo(() => computeTotal(columns, rows), [columns, rows]);
+  const autoTotal = useMemo(() => computeTotal(columns, rows), [columns, rows]);
+  const displayedTotal = override != null ? override : autoTotal;
+
+  function emit(cols: string[], rws: Row[], ovr: string | null) {
+    const total = ovr != null ? ovr : computeTotal(cols, rws);
+    onChange(serializeBom(cols, rws, total));
+  }
 
   function commit(nextColumns: string[], nextRows: Row[]) {
     setColumns(nextColumns);
     setRows(nextRows);
-    onChange(serializeBom(nextColumns, nextRows, computeTotal(nextColumns, nextRows)));
+    emit(nextColumns, nextRows, override);
   }
 
   function setCell(rowId: string, c: number, value: string) {
@@ -153,6 +179,43 @@ export default function BomEditor({ initialBody, onChange }: Props) {
     );
   }
 
+  function onTotalChange(value: string) {
+    const ovr = value.trim() === '' ? null : value;
+    setOverride(ovr);
+    emit(columns, rows, ovr);
+  }
+
+  function resetTotal() {
+    setOverride(null);
+    emit(columns, rows, null);
+  }
+
+  function exportCsv() {
+    const lines = [columns.map(csvEscape).join(',')];
+    for (const r of rows) lines.push(columns.map((_, i) => csvEscape(r.cells[i] || '')).join(','));
+    if (displayedTotal) {
+      const costIdx = columns.findIndex((c) => /cost|price/i.test(c));
+      if (costIdx >= 0) {
+        const totalRow = columns.map(() => '');
+        totalRow[costIdx] = displayedTotal;
+        if (costIdx > 0) totalRow[costIdx - 1] = 'Total';
+        lines.push(totalRow.map(csvEscape).join(','));
+      } else {
+        lines.push(csvEscape('Total: ' + displayedTotal));
+      }
+    }
+    const csv = lines.join('\r\n') + '\r\n';
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = ((title || 'bom').replace(/[^a-z0-9\-_ ]/gi, '_').trim() || 'bom') + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    onToast?.('Exported CSV', 'success');
+  }
+
   return (
     <div className="bom-editor">
       <div className="bom-toolbar">
@@ -162,7 +225,15 @@ export default function BomEditor({ initialBody, onChange }: Props) {
           </svg>
           Fill the grid — it saves as a Markdown table.
         </span>
-        <button className="ghost-btn" onClick={addColumn}>+ Column</button>
+        <div className="bom-toolbar-actions">
+          <button className="ghost-btn" onClick={exportCsv} title="Download as CSV">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            CSV
+          </button>
+          <button className="ghost-btn" onClick={addColumn}>+ Column</button>
+        </div>
       </div>
 
       <div className="bom-grid-wrap">
@@ -219,9 +290,20 @@ export default function BomEditor({ initialBody, onChange }: Props) {
         <button className="bom-addrow" onClick={addRow}>
           <span className="plus">+</span> Add row
         </button>
-        {total != null && (
-          <div className="bom-total">Total <span>{total}</span></div>
-        )}
+        <div className="bom-total">
+          <span className="bom-total-label">Total</span>
+          <input
+            className="bom-total-input"
+            value={displayedTotal ?? ''}
+            placeholder="Auto"
+            onChange={(e) => onTotalChange(e.target.value)}
+          />
+          {override != null && (
+            <button className="bom-total-reset" title="Reset to auto-calculated total" onClick={resetTotal}>
+              auto
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

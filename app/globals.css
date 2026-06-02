@@ -315,6 +315,24 @@ a { color: var(--accent); }
 .entry-act:hover { color: var(--accent); opacity: 1; }
 .entry.pinned .entry-act { opacity: 1; color: var(--accent); }
 
+.entry-grip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  opacity: 0;
+  flex-shrink: 0;
+  margin: 0 -1px 0 -4px;
+  transition: opacity 120ms var(--ease-out);
+  pointer-events: none;
+}
+.entry:hover .entry-grip { opacity: 0.5; }
+.entry { cursor: grab; }
+.entry:active { cursor: grabbing; }
+.entry.dragging { opacity: 0.4; }
+.entry.drop-above { box-shadow: inset 0 2px 0 0 var(--accent); }
+.entry.drop-below { box-shadow: inset 0 -2px 0 0 var(--accent); }
+
 .sidebar-footer {
   border-top: 1px solid var(--border);
   padding-top: 10px;
@@ -599,18 +617,50 @@ a { color: var(--accent); }
 }
 .bom-addrow:hover { border-color: var(--accent); color: var(--accent); }
 .bom-addrow .plus { font-size: 14px; }
+.bom-toolbar-actions { display: flex; align-items: center; gap: 8px; }
 .bom-total {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.bom-total-label {
   font-size: 12px;
   color: var(--text-muted);
   font-weight: 600;
   letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
-.bom-total span {
+.bom-total-input {
+  width: 110px;
+  text-align: right;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 14px;
-  margin-left: 6px;
+  font-weight: 700;
+  padding: 6px 9px;
+  outline: none;
 }
+.bom-total-input::placeholder { color: var(--text-muted); font-weight: 400; }
+.bom-total-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.bom-total-reset {
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.bom-total-reset:hover { color: var(--accent); border-color: var(--accent); }
 
 .editor {
   width: 100%;

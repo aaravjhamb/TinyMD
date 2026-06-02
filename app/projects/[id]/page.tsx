@@ -16,6 +16,7 @@ import {
   getMe,
   getProject,
   isGuestMode,
+  reorderEntries as apiReorderEntries,
   saveCdnKey,
   updateEntry as apiUpdateEntry,
   updateProject as apiUpdateProject,
@@ -23,11 +24,12 @@ import {
 import type { Entry, EntryKind, Project, ToastInfo, User } from '../../lib/types';
 import { relTime } from '../../lib/utils';
 
-// Pinned entries (e.g. the README) float to the top; the rest stay newest-first.
+// Pinned entries (e.g. the README) float to the top; otherwise manual order, then newest-first.
 function sortEntries(list: Entry[]): Entry[] {
   return [...list].sort(
     (a, b) =>
       (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
+      a.position - b.position ||
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 }
@@ -46,6 +48,8 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [newEntryOpen, setNewEntryOpen] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ id: string; pos: 'above' | 'below' } | null>(null);
   const [guest, setGuest] = useState(false);
   const [toast, setToast] = useState<ToastInfo>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
@@ -55,6 +59,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const editorHandle = useRef<EditorHandle>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const titleSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dragIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -168,6 +173,59 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     } catch (e: any) {
       setEntries((es) => sortEntries(es.map((e) => (e.id === entry.id ? { ...e, pinned: entry.pinned } : e))));
       showToast(e.message || 'Failed to update pin', 'error');
+    }
+  }
+
+  function onEntryDragStart(e: React.DragEvent, id: string) {
+    dragIdRef.current = id;
+    setDragId(id);
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', id); } catch {}
+    try { e.dataTransfer.setDragImage(e.currentTarget as HTMLElement, 12, 12); } catch {}
+  }
+
+  function onEntryDragOver(e: React.DragEvent, id: string) {
+    const src = dragIdRef.current;
+    if (!src || src === id) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const pos: 'above' | 'below' = e.clientY - rect.top < rect.height / 2 ? 'above' : 'below';
+    setDropTarget((cur) => (cur && cur.id === id && cur.pos === pos ? cur : { id, pos }));
+  }
+
+  function onEntryDragEnd() {
+    dragIdRef.current = null;
+    setDragId(null);
+    setDropTarget(null);
+  }
+
+  async function onEntryDrop(e: React.DragEvent, targetId: string) {
+    e.preventDefault();
+    const sourceId = dragIdRef.current;
+    const pos = dropTarget?.pos ?? 'above';
+    dragIdRef.current = null;
+    setDragId(null);
+    setDropTarget(null);
+    if (!sourceId || sourceId === targetId) return;
+
+    const arr = entries.slice();
+    const from = arr.findIndex((x) => x.id === sourceId);
+    if (from < 0) return;
+    const [moved] = arr.splice(from, 1);
+    const targetIdx = arr.findIndex((x) => x.id === targetId);
+    if (targetIdx < 0) return;
+    const insertAt = pos === 'below' ? targetIdx + 1 : targetIdx;
+    arr.splice(insertAt, 0, moved);
+
+    const repositioned = arr.map((en, i) => ({ ...en, position: i }));
+    const prev = entries;
+    setEntries(sortEntries(repositioned));
+    try {
+      await apiReorderEntries(projectId, repositioned.map((en) => en.id));
+    } catch (err: any) {
+      setEntries(prev);
+      showToast(err.message || 'Failed to reorder', 'error');
     }
   }
 
@@ -333,9 +391,26 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           {entries.map((en) => (
             <div
               key={en.id}
-              className={'entry' + (en.id === activeEntry?.id ? ' active' : '') + (en.pinned ? ' pinned' : '')}
+              draggable
+              className={
+                'entry' +
+                (en.id === activeEntry?.id ? ' active' : '') +
+                (en.pinned ? ' pinned' : '') +
+                (en.id === dragId ? ' dragging' : '') +
+                (dropTarget?.id === en.id && dragId !== en.id ? ' drop-' + dropTarget.pos : '')
+              }
               onClick={() => setActiveEntryId(en.id)}
+              onDragStart={(e) => onEntryDragStart(e, en.id)}
+              onDragEnd={onEntryDragEnd}
+              onDragOver={(e) => onEntryDragOver(e, en.id)}
+              onDrop={(e) => onEntryDrop(e, en.id)}
             >
+              <span className="entry-grip" title="Drag to reorder" aria-hidden="true">
+                <svg width="10" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="9" cy="6" r="1.6" /><circle cx="9" cy="12" r="1.6" /><circle cx="9" cy="18" r="1.6" />
+                  <circle cx="15" cy="6" r="1.6" /><circle cx="15" cy="12" r="1.6" /><circle cx="15" cy="18" r="1.6" />
+                </svg>
+              </span>
               <span className="entry-dot" />
               <span className="entry-name" title={en.title || 'Untitled'}>{en.title || 'Untitled'}</span>
               {(en.kind === 'readme' || en.kind === 'bom') && (
@@ -450,8 +525,10 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
               <BomEditor
                 key={activeEntry.id}
                 entryId={activeEntry.id}
+                title={activeEntry.title}
                 initialBody={activeEntry.body}
                 onChange={handleBodyChange}
+                onToast={showToast}
               />
             ) : (
               <EditorPane

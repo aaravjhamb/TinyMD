@@ -31,6 +31,7 @@ export type Entry = {
   body: string;
   kind: EntryKind;
   pinned: boolean;
+  position: number;
   created_at: string;
   updated_at: string;
 };

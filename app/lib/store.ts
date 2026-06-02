@@ -54,6 +54,10 @@ export function deleteEntry(id: string): Promise<{ ok: true }> {
   return guest.isGuestMode() ? guest.deleteEntry(id) : api.deleteEntry(id);
 }
 
+export function reorderEntries(projectId: string, order: string[]): Promise<{ ok: true }> {
+  return guest.isGuestMode() ? guest.reorderEntries(projectId, order) : api.reorderEntries(projectId, order);
+}
+
 export function saveCdnKey(key: string): Promise<{ cdn_api_key: string | null }> {
   return guest.isGuestMode() ? guest.saveCdnKey(key) : api.saveCdnKey(key);
 }

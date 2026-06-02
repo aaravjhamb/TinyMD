@@ -39,7 +39,7 @@ function load(): GuestData {
     if (parsed.entries && typeof parsed.entries === 'object') {
       for (const key of Object.keys(parsed.entries)) {
         const list = parsed.entries[key];
-        if (Array.isArray(list)) entries[key] = list.map(normalizeEntry);
+        if (Array.isArray(list)) entries[key] = list.map((e, i) => normalizeEntry(e, i));
       }
     }
     return {
@@ -67,14 +67,20 @@ function nowISO(): string {
   return new Date().toISOString();
 }
 
-function normalizeEntry(e: Entry): Entry {
-  return { ...e, kind: e.kind ?? 'journal', pinned: !!e.pinned };
+function normalizeEntry(e: Entry, index = 0): Entry {
+  return {
+    ...e,
+    kind: e.kind ?? 'journal',
+    pinned: !!e.pinned,
+    position: typeof e.position === 'number' ? e.position : index,
+  };
 }
 
 function sortGuestEntries(list: Entry[]): Entry[] {
   return [...list].sort(
     (a, b) =>
       (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
+      a.position - b.position ||
       new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
   );
 }
@@ -180,16 +186,19 @@ export async function createEntry(
   if (!data.projects.find((p) => p.id === projectId)) throw new Error('Project not found');
   const now = nowISO();
   const kind = body.kind ?? 'journal';
+  const existing = data.entries[projectId] || [];
+  const minPos = existing.reduce((m, e) => Math.min(m, e.position ?? 0), 0);
   const entry: Entry = {
     id: uid(),
     title: body.title || 'Untitled',
     body: body.body || '',
     kind,
     pinned: body.pinned ?? kind === 'readme',
+    position: minPos - 1,
     created_at: now,
     updated_at: now,
   };
-  data.entries[projectId] = sortGuestEntries([entry, ...(data.entries[projectId] || [])]);
+  data.entries[projectId] = sortGuestEntries([entry, ...existing]);
   const pIdx = data.projects.findIndex((p) => p.id === projectId);
   if (pIdx !== -1) data.projects[pIdx] = { ...data.projects[pIdx], updated_at: now };
   save(data);
@@ -225,6 +234,20 @@ export async function deleteEntry(id: string): Promise<{ ok: true }> {
   const found = findEntry(data, id);
   if (!found) return { ok: true };
   data.entries[found.projectId].splice(found.index, 1);
+  save(data);
+  return { ok: true };
+}
+
+export async function reorderEntries(projectId: string, order: string[]): Promise<{ ok: true }> {
+  const data = load();
+  const list = data.entries[projectId];
+  if (!list) return { ok: true };
+  const rank = new Map(order.map((id, i) => [id, i]));
+  for (const e of list) {
+    const pos = rank.get(e.id);
+    if (pos !== undefined) e.position = pos;
+  }
+  data.entries[projectId] = sortGuestEntries(list);
   save(data);
   return { ok: true };
 }

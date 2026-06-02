@@ -19,9 +19,9 @@ export async function GET(_req: NextRequest, ctx: Params) {
   if (!project) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const entries = await many(
-    `SELECT id, title, body, kind, pinned, created_at, updated_at
+    `SELECT id, title, body, kind, pinned, position, created_at, updated_at
        FROM entries WHERE project_id = $1 AND user_id = $2
-      ORDER BY pinned DESC, created_at DESC`,
+      ORDER BY pinned DESC, position ASC, created_at DESC`,
     [id, user.id]
   );
 

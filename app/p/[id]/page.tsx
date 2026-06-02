@@ -26,7 +26,7 @@ export default async function PublicProjectPage({ params }: { params: Promise<{ 
   if (!project) notFound();
 
   const entries = await many<RawEntry>(
-    `SELECT id, title, body, kind, pinned, created_at, updated_at
+    `SELECT id, title, body, kind, pinned, position, created_at, updated_at
        FROM entries WHERE project_id = $1
       ORDER BY pinned DESC, created_at ASC`,
     [id]

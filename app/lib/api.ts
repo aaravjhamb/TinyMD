@@ -60,6 +60,10 @@ export async function deleteEntry(id: string): Promise<{ ok: true }> {
   return req(`/api/entries/${id}`, { method: 'DELETE' });
 }
 
+export async function reorderEntries(projectId: string, order: string[]): Promise<{ ok: true }> {
+  return req(`/api/projects/${projectId}/entries`, { method: 'PATCH', body: JSON.stringify({ order }) });
+}
+
 export async function saveCdnKey(key: string): Promise<{ cdn_api_key: string | null }> {
   return req('/api/me/cdn-key', { method: 'PUT', body: JSON.stringify({ key }) });
 }
