@@ -169,6 +169,62 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     showToast(`Exported ${sorted.length} ${sorted.length === 1 ? 'entry' : 'entries'}`, 'success');
   }
 
+  function exportBom() {
+    if (!project) return;
+    const sorted = [...entries].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    let headers: string[] | null = null;
+    const rows: string[][] = [];
+    for (const entry of sorted) {
+      const lines = entry.body.split('\n');
+      let inBom = false;
+      let bomCols = 0;
+      for (const raw of lines) {
+        const line = raw.trim();
+        const isTableRow = line.startsWith('|') && line.endsWith('|');
+        if (!isTableRow) { inBom = false; continue; }
+        const cells = line.slice(1, -1).split('|').map((c) => c.trim());
+        const isDivider = cells.every((c) => /^:?-+:?$/.test(c));
+        if (isDivider) continue;
+        if (!inBom) {
+          if (cells[0]?.toLowerCase() === 'qty') {
+            inBom = true;
+            bomCols = cells.length;
+            if (!headers) headers = cells;
+          }
+        } else {
+          if (cells.length !== bomCols) { inBom = false; continue; }
+          if (cells.some((c) => c !== '')) rows.push(cells);
+        }
+      }
+    }
+    if (!headers || rows.length === 0) {
+      showToast('No BOM tables found in this project', 'error');
+      return;
+    }
+    const computedTotal = rows.reduce((sum, r) => {
+      const n = parseFloat(r[0] || '0');
+      return sum + (isNaN(n) ? 0 : n);
+    }, 0);
+    const input = window.prompt('BOM total quantity (edit if needed):', String(computedTotal));
+    if (input === null) return;
+    const userTotal = input.trim() || String(computedTotal);
+    const csvEscape = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+    const cols = headers;
+    const csvLines: string[] = [];
+    csvLines.push(cols.map(csvEscape).join(','));
+    for (const r of rows) csvLines.push(cols.map((_, i) => csvEscape(r[i] || '')).join(','));
+    csvLines.push(cols.map((_, i) => (i === 0 ? csvEscape(userTotal) : i === 1 ? csvEscape('Total') : '')).join(','));
+    const blob = new Blob([csvLines.join('\n') + '\n'], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (project.name || 'project').replace(/[^a-z0-9\-_ ]/gi, '_') + '-bom.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    showToast(`Exported BOM (${rows.length} ${rows.length === 1 ? 'row' : 'rows'})`, 'success');
+  }
+
   useEffect(() => {
     let dragging = false;
     const onMove = (e: MouseEvent) => {
@@ -313,6 +369,10 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           <button className="footer-btn" onClick={exportProject} title="Export project as .md">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export
+          </button>
+          <button className="footer-btn" onClick={exportBom} title="Export BOM as .csv (edit total before download)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+            Export BOM
           </button>
         </div>
       </aside>
