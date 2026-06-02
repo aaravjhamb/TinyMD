@@ -4,6 +4,7 @@ import {
   buildAuthorizeUrl,
   challengeFromVerifier,
   generateVerifier,
+  publicOrigin,
   setOAuthState,
 } from '../../../lib/auth';
 
@@ -12,7 +13,7 @@ export const runtime = 'nodejs';
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const returnTo = url.searchParams.get('return_to') || '/';
-  const redirectUri = process.env.HACKCLUB_REDIRECT_URI || `${url.origin}/api/auth/callback`;
+  const redirectUri = `${publicOrigin(req.url)}/api/auth/callback`;
 
   if (!process.env.HACKCLUB_CLIENT_ID) {
     return NextResponse.json(

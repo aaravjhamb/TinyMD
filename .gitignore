@@ -3,7 +3,9 @@ node_modules
 out
 *.log
 .DS_Store
-.env.local
+.env
+.env.*
+!.env.example
 next-env.d.ts
 .claude/
-.env
+tsconfig.tsbuildinfo

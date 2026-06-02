@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
+import BomEditor from '../../components/BomEditor';
 import EditorPane, { type EditorHandle } from '../../components/EditorPane';
+import NewEntryModal from '../../components/NewEntryModal';
 import Preview from '../../components/Preview';
 import SettingsModal from '../../components/SettingsModal';
+import ShareModal from '../../components/ShareModal';
 import UserMenu from '../../components/UserMenu';
 import {
   createEntry as apiCreateEntry,
@@ -12,12 +15,22 @@ import {
   deleteProject as apiDeleteProject,
   getMe,
   getProject,
+  isGuestMode,
+  saveCdnKey,
   updateEntry as apiUpdateEntry,
   updateProject as apiUpdateProject,
-} from '../../lib/api';
-import { loadApiKey, saveApiKey } from '../../lib/storage';
-import type { Entry, Project, ToastInfo, User } from '../../lib/types';
+} from '../../lib/store';
+import type { Entry, EntryKind, Project, ToastInfo, User } from '../../lib/types';
 import { relTime } from '../../lib/utils';
+
+// Pinned entries (e.g. the README) float to the top; the rest stay newest-first.
+function sortEntries(list: Entry[]): Entry[] {
+  return [...list].sort(
+    (a, b) =>
+      (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+}
 
 export default function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: projectId } = use(params);
@@ -31,6 +44,9 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [previewVisible, setPreviewVisible] = useState(true);
   const [apiKey, setApiKeyState] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [newEntryOpen, setNewEntryOpen] = useState(false);
+  const [guest, setGuest] = useState(false);
   const [toast, setToast] = useState<ToastInfo>(null);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [counts, setCounts] = useState({ words: 0, chars: 0, line: 1, col: 1 });
@@ -43,14 +59,16 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     (async () => {
       try {
+        setGuest(isGuestMode());
         const me = await getMe();
         if (!me.user) { router.replace(`/login`); return; }
         setUser(me.user);
         const data = await getProject(projectId);
         setProject(data.project);
-        setEntries(data.entries);
-        setActiveEntryId(data.entries[0]?.id || null);
-        setApiKeyState(loadApiKey());
+        const sorted = sortEntries(data.entries);
+        setEntries(sorted);
+        setActiveEntryId(sorted[0]?.id || null);
+        setApiKeyState(me.user.cdn_api_key || '');
       } catch (e: any) {
         if (e.status === 401) { router.replace(`/login?return_to=/projects/${projectId}`); return; }
         if (e.status === 404) { router.replace('/'); return; }
@@ -112,17 +130,44 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     }, 400);
   }
 
-  async function newEntry() {
+  function templateForKind(kind: EntryKind): { title: string; body: string } {
+    if (kind === 'readme') {
+      const name = project?.name || 'Project';
+      return {
+        title: 'README',
+        body: `# ${name}\n\n> One-line summary of what this project is.\n\n## Overview\n\nWhat it does and why it exists.\n\n## Status\n\n- [ ] In progress\n\n## Links\n\n- \n`,
+      };
+    }
+    if (kind === 'bom') {
+      return {
+        title: 'Bill of materials',
+        body: `| Qty | Part | Description | Source | Cost |\n| --- | --- | --- | --- | --- |\n|   |   |   |   |   |\n`,
+      };
+    }
+    const idx = entries.filter((e) => e.kind === 'journal').length + 1;
+    return { title: `Day ${idx} · ${new Date().toLocaleDateString()}`, body: `# Day ${idx}\n\n` };
+  }
+
+  async function createEntryOfKind(kind: EntryKind) {
+    setNewEntryOpen(false);
     try {
-      const idx = entries.length + 1;
-      const { entry } = await apiCreateEntry(projectId, {
-        title: `Day ${idx} · ${new Date().toLocaleDateString()}`,
-        body: `# Day ${idx}\n\n`,
-      });
-      setEntries((es) => [entry, ...es]);
+      const { title, body } = templateForKind(kind);
+      const { entry } = await apiCreateEntry(projectId, { title, body, kind, pinned: kind === 'readme' });
+      setEntries((es) => sortEntries([entry, ...es]));
       setActiveEntryId(entry.id);
     } catch (e: any) {
       showToast(e.message || 'Failed to create entry', 'error');
+    }
+  }
+
+  async function togglePin(entry: Entry) {
+    const pinned = !entry.pinned;
+    setEntries((es) => sortEntries(es.map((e) => (e.id === entry.id ? { ...e, pinned } : e))));
+    try {
+      await apiUpdateEntry(entry.id, { pinned });
+    } catch (e: any) {
+      setEntries((es) => sortEntries(es.map((e) => (e.id === entry.id ? { ...e, pinned: entry.pinned } : e))));
+      showToast(e.message || 'Failed to update pin', 'error');
     }
   }
 
@@ -289,7 +334,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             title="Change cover image"
             onClick={() => {
               if (!apiKey) {
-                showToast('Add a Hack Club CDN key in Settings first', 'error');
+                showToast('Add a CDN key in Settings first', 'error');
                 setSettingsOpen(true);
                 return;
               }
@@ -335,7 +380,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           />
         </div>
 
-        <button className="new-project-btn" onClick={newEntry}>
+        <button className="new-project-btn" onClick={() => setNewEntryOpen(true)}>
           <span className="plus">+</span> New entry
         </button>
 
@@ -344,11 +389,24 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           {entries.map((en) => (
             <div
               key={en.id}
-              className={'entry' + (en.id === activeEntry?.id ? ' active' : '')}
+              className={'entry' + (en.id === activeEntry?.id ? ' active' : '') + (en.pinned ? ' pinned' : '')}
               onClick={() => setActiveEntryId(en.id)}
             >
               <span className="entry-dot" />
               <span className="entry-name" title={en.title || 'Untitled'}>{en.title || 'Untitled'}</span>
+              {(en.kind === 'readme' || en.kind === 'bom') && (
+                <span className="entry-tag">{en.kind === 'readme' ? 'README' : 'BOM'}</span>
+              )}
+              <button
+                className="entry-act"
+                title={en.pinned ? 'Unpin' : 'Pin to top'}
+                onClick={(e) => { e.stopPropagation(); togglePin(en); }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill={en.pinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 17v5" />
+                  <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+                </svg>
+              </button>
               <button
                 className="entry-del"
                 title="Delete entry"
@@ -402,29 +460,42 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
                 {saveStatus === 'saving' ? 'saving…' : saveStatus}
               </span>
             )}
+            {activeEntry && activeEntry.kind !== 'bom' && (
+              <button
+                className="ghost-btn"
+                onClick={() => {
+                  if (!apiKey) {
+                    showToast('Add a CDN key in Settings first', 'error');
+                    setSettingsOpen(true);
+                    return;
+                  }
+                  const input = document.querySelector('.editor-pane input[type="file"]') as HTMLInputElement | null;
+                  input?.click();
+                }}
+                title="Upload image"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                Image
+              </button>
+            )}
             {activeEntry && (
-              <>
-                <button
-                  className="ghost-btn"
-                  onClick={() => {
-                    if (!apiKey) {
-                      showToast('Add a Hack Club CDN key in Settings first', 'error');
-                      setSettingsOpen(true);
-                      return;
-                    }
-                    const input = document.querySelector('.editor-pane input[type="file"]') as HTMLInputElement | null;
-                    input?.click();
-                  }}
-                  title="Upload image"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-                  Image
-                </button>
-                <button className="ghost-btn" onClick={() => setPreviewVisible((v) => !v)} title="Toggle preview">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Preview
-                </button>
-              </>
+              <button className="ghost-btn" onClick={() => setPreviewVisible((v) => !v)} title="Toggle preview">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                Preview
+              </button>
+            )}
+            {!guest && (
+              <button
+                className={'ghost-btn' + (project.is_public ? ' is-public' : '')}
+                onClick={() => setShareOpen(true)}
+                title={project.is_public ? 'Public — manage sharing' : 'Share publicly'}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                </svg>
+                {project.is_public ? 'Public' : 'Share'}
+              </button>
             )}
             {user && <UserMenu user={user} />}
           </div>
@@ -435,21 +506,30 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             ref={splitRef as any}
             className={'split' + (previewVisible ? '' : ' no-preview')}
           >
-            <EditorPane
-              ref={editorHandle}
-              entryId={activeEntry.id}
-              initialBody={activeEntry.body}
-              onChange={handleBodyChange}
-              onSelectionChange={handleSelectionChange}
-              apiKey={apiKey}
-              onToast={showToast}
-              onRequestApiKey={() => setSettingsOpen(true)}
-            />
+            {activeEntry.kind === 'bom' ? (
+              <BomEditor
+                key={activeEntry.id}
+                entryId={activeEntry.id}
+                initialBody={activeEntry.body}
+                onChange={handleBodyChange}
+              />
+            ) : (
+              <EditorPane
+                ref={editorHandle}
+                entryId={activeEntry.id}
+                initialBody={activeEntry.body}
+                onChange={handleBodyChange}
+                onSelectionChange={handleSelectionChange}
+                apiKey={apiKey}
+                onToast={showToast}
+                onRequestApiKey={() => setSettingsOpen(true)}
+              />
+            )}
             <div id="divider" className="divider" />
             <Preview source={activeEntry.body} />
           </section>
         ) : (
-          <NoEntries project={project} onNew={newEntry} />
+          <NoEntries project={project} onNew={() => setNewEntryOpen(true)} />
         )}
 
         <footer className="statusbar">
@@ -466,11 +546,35 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         </footer>
       </main>
 
+      <NewEntryModal
+        open={newEntryOpen}
+        hasReadme={entries.some((e) => e.kind === 'readme')}
+        onClose={() => setNewEntryOpen(false)}
+        onPick={createEntryOfKind}
+      />
+
       <SettingsModal
         open={settingsOpen}
         initialKey={apiKey}
         onClose={() => setSettingsOpen(false)}
-        onSave={(k) => { saveApiKey(k); setApiKeyState(k); }}
+        onSave={async (k) => { await saveCdnKey(k); setApiKeyState(k); }}
+        onToast={showToast}
+      />
+
+      <ShareModal
+        open={shareOpen}
+        projectId={project.id}
+        isPublic={project.is_public}
+        onClose={() => setShareOpen(false)}
+        onToggle={async (next) => {
+          try {
+            const { project: updated } = await apiUpdateProject(project.id, { is_public: next });
+            setProject({ ...project, is_public: updated.is_public });
+            showToast(next ? 'Project is now public' : 'Project is now private', 'success');
+          } catch (e: any) {
+            showToast(e.message || 'Failed to update sharing', 'error');
+          }
+        }}
         onToast={showToast}
       />
 

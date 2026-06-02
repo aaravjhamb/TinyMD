@@ -1,7 +1,8 @@
-import type { Entry, Project, ProjectWithCounts, User } from './types';
+import type { Entry, EntryKind, Project, ProjectWithCounts, User } from './types';
 
 async function req<T>(url: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(url, {
+    credentials: 'include',
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -39,7 +40,7 @@ export async function getProject(id: string): Promise<{ project: Project; entrie
   return req(`/api/projects/${id}`);
 }
 
-export async function updateProject(id: string, body: Partial<{ name: string; color: string; cover_image: string | null }>): Promise<{ project: Project }> {
+export async function updateProject(id: string, body: Partial<{ name: string; color: string; cover_image: string | null; is_public: boolean }>): Promise<{ project: Project }> {
   return req(`/api/projects/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
 }
 
@@ -47,14 +48,18 @@ export async function deleteProject(id: string): Promise<{ ok: true }> {
   return req(`/api/projects/${id}`, { method: 'DELETE' });
 }
 
-export async function createEntry(projectId: string, body: { title?: string; body?: string }): Promise<{ entry: Entry }> {
+export async function createEntry(projectId: string, body: { title?: string; body?: string; kind?: EntryKind; pinned?: boolean }): Promise<{ entry: Entry }> {
   return req(`/api/projects/${projectId}/entries`, { method: 'POST', body: JSON.stringify(body) });
 }
 
-export async function updateEntry(id: string, body: Partial<{ title: string; body: string }>): Promise<{ entry: Entry }> {
+export async function updateEntry(id: string, body: Partial<{ title: string; body: string; pinned: boolean; kind: EntryKind }>): Promise<{ entry: Entry }> {
   return req(`/api/entries/${id}`, { method: 'PATCH', body: JSON.stringify(body) });
 }
 
 export async function deleteEntry(id: string): Promise<{ ok: true }> {
   return req(`/api/entries/${id}`, { method: 'DELETE' });
+}
+
+export async function saveCdnKey(key: string): Promise<{ cdn_api_key: string | null }> {
+  return req('/api/me/cdn-key', { method: 'PUT', body: JSON.stringify({ key }) });
 }

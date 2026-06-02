@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+import DOMPurify from 'isomorphic-dompurify';
 import { escapeHTML } from './utils';
 
 let configured = false;
@@ -29,7 +29,6 @@ function preprocessComponentBlocks(src: string): string {
 }
 
 export function renderMarkdown(src: string): string {
-  if (typeof window === 'undefined') return '';
   configure();
   const html = marked.parse(preprocessComponentBlocks(src)) as string;
   return DOMPurify.sanitize(html, { ADD_TAGS: ['dl', 'dt', 'dd'], ADD_ATTR: ['class'] });

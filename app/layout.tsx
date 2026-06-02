@@ -1,11 +1,17 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import 'highlight.js/styles/atom-one-dark.css';
 
 export const metadata: Metadata = {
   title: 'TinyMD',
-  description: 'Journal hardware projects in markdown with a live preview.',
-  icons: { icon: 'https://assets.hackclub.com/icon-rounded.svg' },
+  description: "The journaling software you didn't know you needed :D",
+  icons: { icon: '/tinymd-logo-black.png' },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  themeColor: '#1d1d1f',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

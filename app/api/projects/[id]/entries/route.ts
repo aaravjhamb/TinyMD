@@ -5,6 +5,8 @@ import { requireUser } from '../../../../lib/auth';
 
 export const runtime = 'nodejs';
 
+const KINDS = new Set(['journal', 'readme', 'bom']);
+
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_req: NextRequest, ctx: Params) {
@@ -13,9 +15,9 @@ export async function GET(_req: NextRequest, ctx: Params) {
   const { id } = await ctx.params;
 
   const entries = await many(
-    `SELECT id, title, body, created_at, updated_at
+    `SELECT id, title, body, kind, pinned, created_at, updated_at
        FROM entries WHERE project_id = $1 AND user_id = $2
-      ORDER BY created_at DESC`,
+      ORDER BY pinned DESC, created_at DESC`,
     [id, user.id]
   );
 
@@ -33,13 +35,15 @@ export async function POST(req: NextRequest, ctx: Params) {
   const body = await req.json().catch(() => ({}));
   const title = (typeof body.title === 'string' && body.title.trim()) || 'Untitled';
   const content = typeof body.body === 'string' ? body.body : '';
+  const kind = KINDS.has(body.kind) ? body.kind : 'journal';
+  const pinned = typeof body.pinned === 'boolean' ? body.pinned : kind === 'readme';
   const id = crypto.randomUUID();
 
   const entry = await one(
-    `INSERT INTO entries (id, project_id, user_id, title, body)
-       VALUES ($1, $2, $3, $4, $5)
-     RETURNING id, title, body, created_at, updated_at`,
-    [id, projectId, user.id, title, content]
+    `INSERT INTO entries (id, project_id, user_id, title, body, kind, pinned)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id, title, body, kind, pinned, created_at, updated_at`,
+    [id, projectId, user.id, title, content, kind, pinned]
   );
 
   return NextResponse.json({ entry });

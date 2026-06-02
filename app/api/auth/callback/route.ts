@@ -4,6 +4,7 @@ import {
   createSession,
   exchangeCode,
   fetchIdentity,
+  publicOrigin,
   readOAuthState,
   upsertUserFromIdentity,
 } from '../../../lib/auth';
@@ -12,24 +13,25 @@ export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
+  const origin = publicOrigin(req.url);
   const code = url.searchParams.get('code');
   const state = url.searchParams.get('state');
   const err = url.searchParams.get('error');
 
   if (err) {
-    return NextResponse.redirect(`${url.origin}/login?error=${encodeURIComponent(err)}`);
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(err)}`);
   }
   if (!code || !state) {
-    return NextResponse.redirect(`${url.origin}/login?error=missing_code`);
+    return NextResponse.redirect(`${origin}/login?error=missing_code`);
   }
 
   const stored = await readOAuthState();
   if (!stored || stored.state !== state) {
-    return NextResponse.redirect(`${url.origin}/login?error=state_mismatch`);
+    return NextResponse.redirect(`${origin}/login?error=state_mismatch`);
   }
   await clearOAuthState();
 
-  const redirectUri = process.env.HACKCLUB_REDIRECT_URI || `${url.origin}/api/auth/callback`;
+  const redirectUri = `${origin}/api/auth/callback`;
 
   try {
     const token = await exchangeCode({
@@ -42,9 +44,9 @@ export async function GET(req: NextRequest) {
     await createSession(user.id, token.access_token);
   } catch (e: any) {
     console.error('[auth] callback failed', e);
-    return NextResponse.redirect(`${url.origin}/login?error=${encodeURIComponent(e.message || 'callback_failed')}`);
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(e.message || 'callback_failed')}`);
   }
 
   const safeReturn = stored.returnTo && stored.returnTo.startsWith('/') ? stored.returnTo : '/';
-  return NextResponse.redirect(`${url.origin}${safeReturn}`);
+  return NextResponse.redirect(`${origin}${safeReturn}`);
 }

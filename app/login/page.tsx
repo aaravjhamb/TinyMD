@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getMe } from '../lib/api';
+import { enableGuestMode, getMe } from '../lib/store';
 
 function LoginInner() {
   const sp = useSearchParams();
@@ -24,12 +24,11 @@ function LoginInner() {
       <div className="login-card">
         <div className="login-panel-left">
           <div className="login-brand-row">
-            <img src="https://assets.hackclub.com/icon-rounded.svg" alt="" />
-            <span>TinyMD</span>
+            <img src="/tinymd-logo-white.png" alt="" />
           </div>
 
           <h2 className="login-pitch">
-            Document every build,<br />day by day.
+            The markdown editor you didn't know you needed
           </h2>
 
           <ul className="login-features">
@@ -60,7 +59,7 @@ function LoginInner() {
                   <path d="m21 15-5-5L5 21"/>
                 </svg>
               </span>
-              Photos straight to Hack Club CDN
+              CDN integration for photos!
             </li>
           </ul>
         </div>
@@ -68,7 +67,6 @@ function LoginInner() {
         <div className="login-panel-right">
           <div className="login-form">
             <h1>Sign in to TinyMD</h1>
-            <p className="login-sub">Continue with your Hack Club identity to start journaling.</p>
 
             <a className="login-cta" href="/api/auth/login">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -79,16 +77,24 @@ function LoginInner() {
               Continue with Hack Club
             </a>
 
+            <div className="login-divider"><span>or</span></div>
+
+            <button
+              type="button"
+              className="login-guest"
+              onClick={() => { enableGuestMode(); router.replace('/'); }}
+            >
+              Continue as guest
+            </button>
+            <p className="login-guest-note">
+              Everything stays in this browser. No account, no sync.
+            </p>
+
             {error && (
               <div className="login-error">
                 {error.replace(/_/g, ' ')}
               </div>
             )}
-
-            <div className="login-foot">
-              Your entries live in your own Postgres database.<br />
-              Photos upload to <a href="https://cdn.hackclub.com" target="_blank" rel="noopener noreferrer">cdn.hackclub.com</a>.
-            </div>
           </div>
         </div>
       </div>

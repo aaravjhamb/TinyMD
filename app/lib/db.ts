@@ -16,7 +16,7 @@ function getPool(): Pool {
   if (!global.__pgPool) {
     global.__pgPool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DATABASE_URL.includes('sslmode=require') || process.env.NODE_ENV === 'production'
+      ssl: process.env.DATABASE_URL.includes('sslmode=require')
         ? { rejectUnauthorized: false }
         : undefined,
       max: 10,

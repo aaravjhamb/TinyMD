@@ -1,18 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { loadApiKey } from '../lib/storage';
 
 const COLORS = ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple'];
 
 type Props = {
   open: boolean;
+  apiKey: string;
   onClose: () => void;
   onCreate: (data: { name: string; color: string; cover_image: string | null }) => void;
   onNeedApiKey?: () => void;
 };
 
-export default function NewProjectModal({ open, onClose, onCreate, onNeedApiKey }: Props) {
+export default function NewProjectModal({ open, apiKey, onClose, onCreate, onNeedApiKey }: Props) {
   const [name, setName] = useState('');
   const [color, setColor] = useState('red');
   const [cover, setCover] = useState<string | null>(null);
@@ -41,9 +41,8 @@ export default function NewProjectModal({ open, onClose, onCreate, onNeedApiKey 
   }
 
   async function handleFile(file: File) {
-    const key = loadApiKey();
-    if (!key) {
-      setUploadErr('Add a Hack Club CDN key in Settings first.');
+    if (!apiKey) {
+      setUploadErr('Add a CDN key in Settings first.');
       onNeedApiKey?.();
       return;
     }
@@ -54,7 +53,7 @@ export default function NewProjectModal({ open, onClose, onCreate, onNeedApiKey 
       fd.append('file', file);
       const res = await fetch('/api/cdn/upload', {
         method: 'POST',
-        headers: { Authorization: 'Bearer ' + key },
+        headers: { Authorization: 'Bearer ' + apiKey },
         body: fd,
       });
       if (!res.ok) {
@@ -139,7 +138,7 @@ export default function NewProjectModal({ open, onClose, onCreate, onNeedApiKey 
                     <path d="m21 15-5-5L5 21"/>
                   </svg>
                   <div>Drop image, or click to upload</div>
-                  <small>Stored on cdn.hackclub.com</small>
+                  <small>Stored on the cdn</small>
                 </div>
               )}
               <input
@@ -173,7 +172,7 @@ export default function NewProjectModal({ open, onClose, onCreate, onNeedApiKey 
           <div className="modal-actions">
             <button className="ghost-btn" onClick={onClose}>Cancel</button>
             <button className="primary-btn" onClick={submit} disabled={!name.trim() || uploading}>
-              Create project
+              Add a project
             </button>
           </div>
         </div>

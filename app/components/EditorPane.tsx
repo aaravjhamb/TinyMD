@@ -221,14 +221,14 @@ const EditorPane = forwardRef<EditorHandle, Props>(function EditorPane(
   function pickActive() {
     const it = flatList[activeIndex];
     if (!it) return false;
-    closeSlash();
     runAction(it.action);
+    closeSlash();
     return true;
   }
 
   function pickAndUploadImage() {
     if (!apiKey) {
-      onToast('Add a Hack Club CDN key in Settings first', 'error');
+      onToast('Add a CDN key in Settings first', 'error');
       onRequestApiKey();
       return;
     }
@@ -240,7 +240,7 @@ const EditorPane = forwardRef<EditorHandle, Props>(function EditorPane(
 
   async function uploadAndInsert(file: File) {
     if (!apiKey) {
-      onToast('Add a Hack Club CDN key in Settings first', 'error');
+      onToast('Add a CDN key in Settings first', 'error');
       onRequestApiKey();
       return;
     }
@@ -475,7 +475,7 @@ const EditorPane = forwardRef<EditorHandle, Props>(function EditorPane(
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" y1="3" x2="12" y2="15" />
             </svg>
-            <div>Drop to upload to Hack Club CDN</div>
+            <div>Drop to upload to the cdn</div>
           </div>
         </div>
       )}

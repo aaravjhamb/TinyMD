@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation';
 import UserMenu from './components/UserMenu';
 import NewProjectModal from './components/NewProjectModal';
 import SettingsModal from './components/SettingsModal';
-import { createProject, getMe, listProjects } from './lib/api';
-import { loadApiKey, saveApiKey } from './lib/storage';
+import { createProject, getMe, listProjects, saveCdnKey } from './lib/store';
 import type { ProjectWithCounts, User, ToastInfo } from './lib/types';
 import { relTime } from './lib/utils';
 
@@ -30,7 +29,7 @@ export default function Dashboard() {
           return;
         }
         setUser(me.user);
-        setApiKeyState(loadApiKey());
+        setApiKeyState(me.user.cdn_api_key || '');
         const data = await listProjects();
         setProjects(data.projects);
       } catch (e: any) {
@@ -77,10 +76,8 @@ export default function Dashboard() {
     <div className="dashboard">
       <header className="db-topbar">
         <div className="db-brand">
-          <img src="https://assets.hackclub.com/icon-rounded.svg" alt="" className="brand-mark" />
+          <img src="/tinymd-logo-white.png" alt="" className="brand-mark" />
           <div className="brand-text">
-            <div className="brand-title">TinyMD</div>
-            <div className="brand-sub">hardware journal</div>
           </div>
         </div>
         <div className="db-topbar-actions">
@@ -98,9 +95,9 @@ export default function Dashboard() {
       <main className="db-main">
         <div className="db-hero">
           <h1 className="db-title">
-            {user?.first_name ? `Hey, ${user.first_name}.` : 'Welcome back.'}
+            {user?.first_name ? `Hey, ${user.first_name}!` : 'Welcome back.'}
           </h1>
-          <p className="db-subtitle">Your builds, all in one place.</p>
+          <p className="db-subtitle">watcha gonna cook today</p>
         </div>
 
         {projects.length === 0 ? (
@@ -120,6 +117,7 @@ export default function Dashboard() {
 
       <NewProjectModal
         open={modalOpen}
+        apiKey={apiKey}
         onClose={() => setModalOpen(false)}
         onCreate={onCreate}
         onNeedApiKey={() => { setModalOpen(false); setSettingsOpen(true); }}
@@ -129,7 +127,7 @@ export default function Dashboard() {
         open={settingsOpen}
         initialKey={apiKey}
         onClose={() => setSettingsOpen(false)}
-        onSave={(k) => { saveApiKey(k); setApiKeyState(k); }}
+        onSave={async (k) => { await saveCdnKey(k); setApiKeyState(k); }}
         onToast={showToast}
       />
 
@@ -177,7 +175,7 @@ function EmptyState({ onNew }: { onNew: () => void }) {
       </div>
       <h2>No projects yet</h2>
       <p>Start your first build journal. You can add daily entries, photos, BOMs, pinouts and more.</p>
-      <button className="primary-btn" onClick={onNew}>Create your first project</button>
+      <button className="primary-btn" onClick={onNew}>Add your first project</button>
     </div>
   );
 }

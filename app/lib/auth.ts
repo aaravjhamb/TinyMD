@@ -11,12 +11,24 @@ export const HC_AUTHORIZE = process.env.HACKCLUB_AUTHORIZE_URL || 'https://auth.
 export const HC_TOKEN     = process.env.HACKCLUB_TOKEN_URL     || 'https://auth.hackclub.com/oauth/token';
 export const HC_USERINFO  = process.env.HACKCLUB_USERINFO_URL  || 'https://auth.hackclub.com/api/v1/me';
 
+// Behind a reverse proxy (Dokploy/Traefik) the standalone Next server sees
+// the internal request, so `new URL(req.url).origin` resolves to
+// http://localhost:3000. APP_URL is the single source of truth for the
+// public origin; the request URL is only a dev fallback when APP_URL is unset.
+export function publicOrigin(reqUrl: string): string {
+  if (process.env.APP_URL) {
+    try { return new URL(process.env.APP_URL).origin; } catch {}
+  }
+  return new URL(reqUrl).origin;
+}
+
 export type SessionUser = {
   id: string;
   email: string | null;
   first_name: string | null;
   last_name: string | null;
   slack_id: string | null;
+  cdn_api_key: string | null;
 };
 
 export function generateVerifier(): string {
@@ -87,7 +99,7 @@ export async function currentUser(): Promise<SessionUser | null> {
   const id = c.get(COOKIE_SESSION)?.value;
   if (!id) return null;
   const row = await one<SessionUser & { expires_at: Date }>(
-    `SELECT u.id, u.email, u.first_name, u.last_name, u.slack_id, s.expires_at
+    `SELECT u.id, u.email, u.first_name, u.last_name, u.slack_id, u.cdn_api_key, s.expires_at
        FROM sessions s
        JOIN users u ON u.id = s.user_id
       WHERE s.id = $1`,
@@ -190,7 +202,7 @@ export async function fetchIdentity(accessToken: string): Promise<HackClubIdenti
 
 export async function upsertUserFromIdentity(id: HackClubIdentity): Promise<SessionUser> {
   const u = id.identity;
-  await query(
+  const row = await one<{ cdn_api_key: string | null }>(
     `INSERT INTO users (id, email, first_name, last_name, slack_id, updated_at)
        VALUES ($1, $2, $3, $4, $5, NOW())
      ON CONFLICT (id) DO UPDATE
@@ -198,7 +210,8 @@ export async function upsertUserFromIdentity(id: HackClubIdentity): Promise<Sess
             first_name = EXCLUDED.first_name,
             last_name = EXCLUDED.last_name,
             slack_id = EXCLUDED.slack_id,
-            updated_at = NOW()`,
+            updated_at = NOW()
+     RETURNING cdn_api_key`,
     [u.id, u.primary_email || null, u.first_name || null, u.last_name || null, u.slack_id || null]
   );
   return {
@@ -207,5 +220,6 @@ export async function upsertUserFromIdentity(id: HackClubIdentity): Promise<Sess
     first_name: u.first_name || null,
     last_name: u.last_name || null,
     slack_id: u.slack_id || null,
+    cdn_api_key: row?.cdn_api_key ?? null,
   };
 }
