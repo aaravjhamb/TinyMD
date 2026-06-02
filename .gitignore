@@ -7,4 +7,5 @@ out
 .env.*
 !.env.example
 next-env.d.ts
+.claude/
 tsconfig.tsbuildinfo
