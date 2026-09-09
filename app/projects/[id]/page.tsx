@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import BomEditor from '../../components/BomEditor';
 import EditorPane, { type EditorHandle } from '../../components/EditorPane';
+import ExportPdfModal from '../../components/ExportPdfModal';
 import NewEntryModal from '../../components/NewEntryModal';
 import Preview from '../../components/Preview';
 import SettingsModal from '../../components/SettingsModal';
@@ -21,6 +22,7 @@ import {
   updateEntry as apiUpdateEntry,
   updateProject as apiUpdateProject,
 } from '../../lib/store';
+import { exportEntriesToPdf, type PdfOptions } from '../../lib/pdf';
 import type { Entry, EntryKind, Project, ToastInfo, User } from '../../lib/types';
 import { relTime } from '../../lib/utils';
 
@@ -48,6 +50,7 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [newEntryOpen, setNewEntryOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; pos: 'above' | 'below' } | null>(null);
   const [guest, setGuest] = useState(false);
@@ -328,6 +331,22 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
     showToast(`Exported BOM (${rows.length} ${rows.length === 1 ? 'row' : 'rows'})`, 'success');
   }
 
+  // Entries go into the PDF in the order shown in the sidebar, so pinned
+  // entries and any manual reordering carry over to the document.
+  async function exportPdf(opts: PdfOptions) {
+    if (!project) return;
+    if (entries.length === 0) {
+      showToast('Nothing to export yet', 'error');
+      return;
+    }
+    try {
+      await exportEntriesToPdf(project, entries, opts);
+      setPdfOpen(false);
+    } catch (e: any) {
+      showToast(e.message || 'PDF export failed', 'error');
+    }
+  }
+
   useEffect(() => {
     let dragging = false;
     const onMove = (e: MouseEvent) => {
@@ -507,6 +526,10 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
             Export BOM
           </button>
+          <button className="footer-btn" onClick={() => setPdfOpen(true)} title="Export all entries as one PDF">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v5"/><path d="M6 18H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1"/><rect x="6" y="14" width="12" height="7" rx="1"/></svg>
+            Export PDF
+          </button>
         </div>
       </aside>
 
@@ -628,6 +651,13 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
         hasReadme={entries.some((e) => e.kind === 'readme')}
         onClose={() => setNewEntryOpen(false)}
         onPick={createEntryOfKind}
+      />
+
+      <ExportPdfModal
+        open={pdfOpen}
+        entryCount={entries.length}
+        onClose={() => setPdfOpen(false)}
+        onExport={exportPdf}
       />
 
       <SettingsModal
