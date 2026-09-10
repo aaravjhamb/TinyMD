@@ -49,6 +49,17 @@ function longDate(iso: string): string {
 // unreadable on paper and drinks ink. Layout mirrors `.preview` otherwise.
 function printCss(size: PageSize, opts: PdfOptions): string {
   const margin = size.height < 220 ? 12 : 16; // wide/short pages need slimmer margins
+  const contentW = size.width - margin * 2;
+  // An image's own border and vertical margins sit inside the page too, so the
+  // tallest it can be and still land on one page is a little under the content
+  // height. Give it back everything beyond that — the printer slices anything
+  // taller, which looks far worse than a slightly smaller photo.
+  const contentH = size.height - margin * 2;
+  const imgMaxH = Math.round(contentH - 8);
+  // Landscape and slide pages are far wider than a comfortable line length, and
+  // a column that wide also makes photos look tiny next to it. Cap the measure
+  // like the on-screen preview does (720px) and centre it.
+  const measure = Math.min(contentW, 190);
   return `
 @font-face {
   font-family: 'Phantom Sans';
@@ -114,7 +125,12 @@ body {
 .pdf-toc .kind { color: #868d97; font-size: 8.5pt; }
 
 /* Entries ------------------------------------------------------- */
-.pdf-entry { ${opts.pageBreaks ? 'break-before: page;' : 'margin-top: 12mm;'} }
+.pdf-entry {
+  ${opts.pageBreaks ? 'break-before: page;' : 'margin-top: 12mm;'}
+  max-width: ${measure}mm;
+  margin-left: auto;
+  margin-right: auto;
+}
 .pdf-entry:first-of-type { break-before: auto; margin-top: 0; }
 .pdf-entry-head {
   border-bottom: 1px solid #e3e6ea;
@@ -148,8 +164,10 @@ body {
 .pdf-body p { margin: 0.7em 0; }
 .pdf-body a { color: var(--accent); text-decoration: underline; }
 .pdf-body img {
+  width: auto;
+  height: auto;          /* never let width/height attrs squash the ratio */
   max-width: 100%;
-  max-height: ${Math.round(size.height - margin * 2 - 20)}mm;
+  max-height: ${imgMaxH}mm;
   border: 1px solid #e3e6ea;
   border-radius: 2mm;
   margin: 0.5em 0;
